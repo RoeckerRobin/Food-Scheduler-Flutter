@@ -1,4 +1,4 @@
-# food_schedular_flutter
+# food_scheduler_flutter
 
 A new Flutter project.
 
