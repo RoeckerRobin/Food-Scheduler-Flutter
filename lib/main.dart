@@ -1,12 +1,26 @@
+import 'dart:io';
+import 'package:hive/hive.dart';
 import 'package:date_time_picker/date_time_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'foodItem.dart';
-import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:path_provider/path_provider.dart' as pathProvider;
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  Directory directory = await pathProvider.getApplicationDocumentsDirectory();
+  Hive.init(directory.path);
+  Hive.registerAdapter(FoodItemAdapter());
+  await Hive.openBox('foodItem_box');
   runApp(MaterialApp(
     home: MyApp(),
     debugShowCheckedModeBanner: false,
+    theme: ThemeData(
+      brightness: Brightness.light,
+      primaryColor: Colors.green,
+      primarySwatch: Colors.green,
+    ),
   ));
 }
 
@@ -18,11 +32,17 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   List<FoodItem> foodItems = [];
   final nameController = TextEditingController();
+  final numberOfObjectsGeneratedPerSecondController = TextEditingController();
+  final numberOfSecondsController = TextEditingController();
   DateTime date = DateTime.now();
+  final _formKey = GlobalKey<FormState>();
+  final DateFormat formatter = DateFormat('yyyy-MM-dd   hh:mm');
+  bool disableCancelButton = false;
 
   @override
   void initState() {
     super.initState();
+    getFoodItems();
   }
 
   @override
@@ -31,15 +51,30 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
-  void deleteFoodItem(FoodItem foodItem) {
+   void getFoodItems() async {
+    var foodItemBox = await Hive.openBox('foodItem_box');
+    for(var foodItem in foodItemBox.values.first){
+      foodItems.add(FoodItem(name: foodItem.name, expiryDate: foodItem.expiryDate));
+      foodItems.sort((a, b) {
+        return a.expiryDate.compareTo(b.expiryDate);
+      });
+    }
+    setState(() {});
+  }
+
+  void deleteFoodItem(FoodItem foodItem) async {
     foodItems.remove(foodItem);
     foodItems.sort((a, b) {
       return a.expiryDate.compareTo(b.expiryDate);
     });
     setState(() {});
+    var foodItembox = await Hive.openBox('foodItem_box');
+    await foodItembox.clear();
+    foodItembox.add(foodItems);
   }
 
-  void addFoodItem() {
+  addFoodItem() async {
+    Navigator.of(context).pop();
     foodItems.add(FoodItem(
         name: nameController.text,
         expiryDate: date));
@@ -47,59 +82,129 @@ class _MyAppState extends State<MyApp> {
       return a.expiryDate.compareTo(b.expiryDate);
     });
     setState(() {});
+     var foodItembox = await Hive.openBox('foodItem_box');
+     await foodItembox.clear();
+     foodItembox.add(foodItems);
   }
 
-  void cleanForm() {
+  void cleanAddForm() {
     nameController.text = "";
   }
 
-  Widget _buildPopupDialog(BuildContext context) {
+  void cleanTestForm() {
+    numberOfSecondsController.text = "";
+    numberOfObjectsGeneratedPerSecondController.text = "";
+  }
+
+   void testFlutter() async {
+    disableCancelButton = true;
+    List testList = [];
+    for(var i = 0; i < int.parse(numberOfSecondsController.text); i++) {
+      for(var j = 0; j < int.parse(numberOfObjectsGeneratedPerSecondController.text); j++ ) {
+        testList.add(new Object());
+      }
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    Navigator.pop(context, 'Stop');
+    disableCancelButton = false;
+  }
+
+  Widget _buildAddPopupDialog(BuildContext context) {
     return AlertDialog(
-      content: Column(
+      title: new Text("Add Food"),
+      content: Form(
+          key: _formKey,
+          child: Column (
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              TextFormField(
+                style: TextStyle(color: Colors.green),
+                decoration: const InputDecoration(labelText: 'Username'),
+                controller: nameController,
+                validator: (value) {
+                  if(value == null || value.isEmpty || value.contains(new RegExp((r'[0-9]')))){
+                    return "Please enter a valid food name";
+                  }
+                  return null;
+                },
+              ),
+              DateTimePicker(
+                cursorColor: Colors.green,
+                  type: DateTimePickerType.dateTimeSeparate,
+                  dateMask: 'd MMM, yyyy',
+                  initialValue: DateTime.now().toString(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                  icon: Icon(Icons.event),
+                  dateLabelText: 'Date',
+                  timeLabelText: "Hour",
+                  onChanged: (val) => date = DateTime.parse(val)),
+            ],
+          )
+      ),
+      actions: <Widget>[
+        TextButton(
+          style: const ButtonStyle(
+            foregroundColor: MaterialStatePropertyAll(Colors.red),
+          ),
+          onPressed: () => {
+              Navigator.pop(context, 'Stop')
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          style: const ButtonStyle(
+            foregroundColor: MaterialStatePropertyAll(Colors.green),
+          ),
+          onPressed: () => {
+            if(_formKey.currentState!.validate()){
+              addFoodItem()
+            }
+          },
+          child: const Text('OK'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTestPopupDialog(BuildContext context) {
+    return AlertDialog(
+      title: new Text("Test Flutter"),
+      content: Form(
+        child: Column (
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Form(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(10.0),
-                child: Column(
-                  children: <Widget>[
-                    const Text("Add Food"),
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'Username'),
-                      controller: nameController,
-                    ),
-                    DateTimePicker(
-                        type: DateTimePickerType.dateTimeSeparate,
-                        dateMask: 'd MMM, yyyy',
-                        initialValue: DateTime.now().toString(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                        icon: Icon(Icons.event),
-                        dateLabelText: 'Date',
-                        timeLabelText: "Hour",
-                        selectableDayPredicate: (date) {
-                          // Disable weekend days to select from the calendar
-                          if (date.weekday == 6 || date.weekday == 7) {
-                            return false;
-                          }
-
-                          return true;
-                        },
-                        onChanged: (val) => date = DateTime.parse(val)),
-                    ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          addFoodItem();
-                        },
-                        child: const Text("Add"))
-                  ],
-                ),
-              ),
+          children: <Widget>[
+            TextFormField(
+              decoration: const InputDecoration(labelText: 'Number of objects generated per seconds'),
+              controller: numberOfObjectsGeneratedPerSecondController,
             ),
-          ]),
+            TextFormField(
+              decoration: const InputDecoration(labelText: 'Number of seconds'),
+              controller: numberOfSecondsController,
+            ),
+          ],
+        )
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => {
+            if(!disableCancelButton){
+              Navigator.pop(context, 'Stop')
+            }
+          },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => {
+            if(!disableCancelButton){
+              testFlutter()
+            }
+          },
+          child: const Text('OK'),
+        ),
+      ],
     );
   }
 
@@ -119,7 +224,7 @@ class _MyAppState extends State<MyApp> {
                 child: Card(
                   child: ListTile(
                       title: Text(foodItem.name),
-                      subtitle: Text("Expiry Date: ${foodItem.expiryDate}"),
+                      subtitle: Text("Expiry Date: ${formatter.format(foodItem.expiryDate.toLocal())}"),
                       trailing: IconButton(
                         color: Colors.red,
                         icon: const Icon(
@@ -135,17 +240,44 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          cleanForm();
-          showDialog(
-            context: context,
-            builder: (BuildContext context) => _buildPopupDialog(context),
-          );
-        },
+      floatingActionButton: SpeedDial(
+        animatedIcon: AnimatedIcons.menu_close,
+        animatedIconTheme: IconThemeData(size: 22),
         backgroundColor: Colors.green,
-        child: const Icon(Icons.add),
-      ),
+        visible: true,
+        curve: Curves.bounceIn,
+        children: [
+          SpeedDialChild(
+              child: const Icon(
+                Icons.add,
+                color: Colors.white,
+              ),
+              backgroundColor: Colors.green,
+              onTap: () {
+                cleanAddForm();
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) => _buildAddPopupDialog(context),
+                  );
+                },
+          ),
+          SpeedDialChild(
+              child: const Icon(
+                  Icons.handyman,
+                  color: Colors.white,
+              ),
+              backgroundColor: Colors.green,
+              onTap: () {
+                cleanTestForm();
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (BuildContext context) => _buildTestPopupDialog(context),
+                );
+              },
+          )
+        ],
+      )
     );
   }
 }
