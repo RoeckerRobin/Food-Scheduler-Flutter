@@ -1,3 +1,3 @@
 # Food Scheduler Flutter
 
-This is the Food Scheduler app implemented in Flutter
+The "Food Scheduler" app implemented in Flutter
