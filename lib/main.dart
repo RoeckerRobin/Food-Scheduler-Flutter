@@ -51,10 +51,11 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
-   void getFoodItems() async {
+  void getFoodItems() async {
     var foodItemBox = await Hive.openBox('foodItem_box');
-    for(var foodItem in foodItemBox.values.first){
-      foodItems.add(FoodItem(name: foodItem.name, expiryDate: foodItem.expiryDate));
+    for (var foodItem in foodItemBox.values.first) {
+      foodItems
+          .add(FoodItem(name: foodItem.name, expiryDate: foodItem.expiryDate));
       foodItems.sort((a, b) {
         return a.expiryDate.compareTo(b.expiryDate);
       });
@@ -75,16 +76,14 @@ class _MyAppState extends State<MyApp> {
 
   addFoodItem() async {
     Navigator.of(context).pop();
-    foodItems.add(FoodItem(
-        name: nameController.text,
-        expiryDate: date));
+    foodItems.add(FoodItem(name: nameController.text, expiryDate: date));
     foodItems.sort((a, b) {
       return a.expiryDate.compareTo(b.expiryDate);
     });
     setState(() {});
-     var foodItembox = await Hive.openBox('foodItem_box');
-     await foodItembox.clear();
-     foodItembox.add(foodItems);
+    var foodItembox = await Hive.openBox('foodItem_box');
+    await foodItembox.clear();
+    foodItembox.add(foodItems);
   }
 
   void cleanAddForm() {
@@ -96,12 +95,14 @@ class _MyAppState extends State<MyApp> {
     numberOfObjectsGeneratedPerSecondController.text = "";
   }
 
-   void testFlutter() async {
+  void testFlutter() async {
     disableCancelButton = true;
     List testList = [];
-    for(var i = 0; i < int.parse(numberOfSecondsController.text); i++) {
-      for(var j = 0; j < int.parse(numberOfObjectsGeneratedPerSecondController.text); j++ ) {
-        testList.add(new Object());
+    for (var i = 0; i < int.parse(numberOfSecondsController.text); i++) {
+      for (var j = 0;
+          j < int.parse(numberOfObjectsGeneratedPerSecondController.text);
+          j++) {
+        testList.add(Object());
       }
       await Future.delayed(const Duration(seconds: 1));
     }
@@ -111,46 +112,45 @@ class _MyAppState extends State<MyApp> {
 
   Widget _buildAddPopupDialog(BuildContext context) {
     return AlertDialog(
-      title: new Text("Add Food"),
+      title: const Text("Add Food"),
       content: Form(
           key: _formKey,
-          child: Column (
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               TextFormField(
-                style: TextStyle(color: Colors.green),
+                style: const TextStyle(color: Colors.green),
                 decoration: const InputDecoration(labelText: 'Username'),
                 controller: nameController,
                 validator: (value) {
-                  if(value == null || value.isEmpty || value.contains(new RegExp((r'[0-9]')))){
+                  if (value == null ||
+                      value.isEmpty ||
+                      value.contains(RegExp((r'[0-9]')))) {
                     return "Please enter a valid food name";
                   }
                   return null;
                 },
               ),
               DateTimePicker(
-                cursorColor: Colors.green,
+                  cursorColor: Colors.green,
                   type: DateTimePickerType.dateTimeSeparate,
                   dateMask: 'd MMM, yyyy',
                   initialValue: DateTime.now().toString(),
                   firstDate: DateTime(2000),
                   lastDate: DateTime(2100),
-                  icon: Icon(Icons.event),
+                  icon: const Icon(Icons.event),
                   dateLabelText: 'Date',
                   timeLabelText: "Hour",
                   onChanged: (val) => date = DateTime.parse(val)),
             ],
-          )
-      ),
+          )),
       actions: <Widget>[
         TextButton(
           style: const ButtonStyle(
             foregroundColor: MaterialStatePropertyAll(Colors.red),
           ),
-          onPressed: () => {
-              Navigator.pop(context, 'Stop')
-          },
+          onPressed: () => {Navigator.pop(context, 'Stop')},
           child: const Text('Cancel'),
         ),
         TextButton(
@@ -158,9 +158,7 @@ class _MyAppState extends State<MyApp> {
             foregroundColor: MaterialStatePropertyAll(Colors.green),
           ),
           onPressed: () => {
-            if(_formKey.currentState!.validate()){
-              addFoodItem()
-            }
+            if (_formKey.currentState!.validate()) {addFoodItem()}
           },
           child: const Text('OK'),
         ),
@@ -170,37 +168,33 @@ class _MyAppState extends State<MyApp> {
 
   Widget _buildTestPopupDialog(BuildContext context) {
     return AlertDialog(
-      title: new Text("Test Flutter"),
+      title: const Text("Test Flutter"),
       content: Form(
-        child: Column (
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'Number of objects generated per seconds'),
-              controller: numberOfObjectsGeneratedPerSecondController,
-            ),
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'Number of seconds'),
-              controller: numberOfSecondsController,
-            ),
-          ],
-        )
-      ),
+          child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          TextFormField(
+            decoration: const InputDecoration(
+                labelText: 'Number of objects generated per seconds'),
+            controller: numberOfObjectsGeneratedPerSecondController,
+          ),
+          TextFormField(
+            decoration: const InputDecoration(labelText: 'Number of seconds'),
+            controller: numberOfSecondsController,
+          ),
+        ],
+      )),
       actions: <Widget>[
         TextButton(
           onPressed: () => {
-            if(!disableCancelButton){
-              Navigator.pop(context, 'Stop')
-            }
+            if (!disableCancelButton) {Navigator.pop(context, 'Stop')}
           },
           child: const Text('Cancel'),
         ),
         TextButton(
           onPressed: () => {
-            if(!disableCancelButton){
-              testFlutter()
-            }
+            if (!disableCancelButton) {testFlutter()}
           },
           child: const Text('OK'),
         ),
@@ -211,43 +205,44 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Food Scheduler"),
-        backgroundColor: Colors.green,
-      ),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: EdgeInsets.all(10),
-          child: Column(
-            children: foodItems.map((foodItem) {
-              return Container(
-                child: Card(
-                  child: ListTile(
-                      title: Text(foodItem.name),
-                      subtitle: Text("Expiry Date: ${formatter.format(foodItem.expiryDate.toLocal())}"),
-                      trailing: IconButton(
-                        color: Colors.red,
-                        icon: const Icon(
-                          Icons.delete,
-                        ),
-                        onPressed: () {
-                          deleteFoodItem(foodItem);
-                        },
-                      )),
-                ),
-              );
-            }).toList(),
+        appBar: AppBar(
+          title: const Text("Food Scheduler"),
+          backgroundColor: Colors.green,
+        ),
+        body: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              children: foodItems.map((foodItem) {
+                return Container(
+                  child: Card(
+                    child: ListTile(
+                        title: Text(foodItem.name),
+                        subtitle: Text(
+                            "Expiry Date: ${formatter.format(foodItem.expiryDate.toLocal())}"),
+                        trailing: IconButton(
+                          color: Colors.red,
+                          icon: const Icon(
+                            Icons.delete,
+                          ),
+                          onPressed: () {
+                            deleteFoodItem(foodItem);
+                          },
+                        )),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         ),
-      ),
-      floatingActionButton: SpeedDial(
-        animatedIcon: AnimatedIcons.menu_close,
-        animatedIconTheme: IconThemeData(size: 22),
-        backgroundColor: Colors.green,
-        visible: true,
-        curve: Curves.bounceIn,
-        children: [
-          SpeedDialChild(
+        floatingActionButton: SpeedDial(
+          animatedIcon: AnimatedIcons.menu_close,
+          animatedIconTheme: const IconThemeData(size: 22),
+          backgroundColor: Colors.green,
+          visible: true,
+          curve: Curves.bounceIn,
+          children: [
+            SpeedDialChild(
               child: const Icon(
                 Icons.add,
                 color: Colors.white,
@@ -257,14 +252,15 @@ class _MyAppState extends State<MyApp> {
                 cleanAddForm();
                 showDialog(
                   context: context,
-                  builder: (BuildContext context) => _buildAddPopupDialog(context),
-                  );
-                },
-          ),
-          SpeedDialChild(
+                  builder: (BuildContext context) =>
+                      _buildAddPopupDialog(context),
+                );
+              },
+            ),
+            SpeedDialChild(
               child: const Icon(
-                  Icons.handyman,
-                  color: Colors.white,
+                Icons.handyman,
+                color: Colors.white,
               ),
               backgroundColor: Colors.green,
               onTap: () {
@@ -272,12 +268,12 @@ class _MyAppState extends State<MyApp> {
                 showDialog(
                   context: context,
                   barrierDismissible: false,
-                  builder: (BuildContext context) => _buildTestPopupDialog(context),
+                  builder: (BuildContext context) =>
+                      _buildTestPopupDialog(context),
                 );
               },
-          )
-        ],
-      )
-    );
+            )
+          ],
+        ));
   }
 }
